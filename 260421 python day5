@@ -1,0 +1,55 @@
+import requests
+from bs4 import BeautifulSoup
+
+# BLUEPRINT | DONT EDIT
+response = requests.get(
+    "https://berlinstartupjobs.com/engineering/",
+    headers={
+        "User-Agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    })
+skills = ["python", "typescript", "javascript", "rust"]
+# /BLUEPRINT
+
+# 👇🏻 YOUR CODE 👇🏻:
+class BerlinStartupScraper:
+    def __init__(self):
+        self.session = requests.Session()
+        self.session.headers.update({
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        })
+
+    def get_jobs(self, url):
+        res = self.session.get(url)
+        if res.status_code != 200:
+            return []
+
+        soup = BeautifulSoup(res.text, "html.parser")
+        job_items = soup.select(".bjs-jlid__wrapper")
+        
+        parsed_jobs = []
+        for item in job_items:
+            title_anchor = item.select_one(".bjs-jlid__h a")
+            parsed_jobs.append({
+                "company": item.select_one(".bjs-jlid__b").get_text(strip=True),
+                "title": title_anchor.get_text(strip=True),
+                "link": title_anchor["href"],
+                "description": item.select_one(".bjs-jlid__description").get_text(strip=True)
+            })
+        return parsed_jobs
+
+scraper = BerlinStartupScraper()
+all_results = {}
+
+all_results["Engineering"] = scraper.get_jobs("https://berlinstartupjobs.com/engineering/")
+
+for skill in skills:
+    url = f"https://berlinstartupjobs.com/skill-areas/{skill}/"
+    all_results[skill.capitalize()] = scraper.get_jobs(url)
+
+for category, jobs in all_results.items():
+    print(f"\n{'='*20} {category} Jobs ({len(jobs)}) {'='*20}")
+    for job in jobs:
+        print(f"[{job['company']}] {job['title']}")
+        print(f"URL: {job['link']}\n")
+# /YOUR CODE
